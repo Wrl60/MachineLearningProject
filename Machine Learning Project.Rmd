@@ -1,0 +1,71 @@
+---
+title: "Machine Learning Project"
+author: "Bill Lancaster"
+date: "September 10, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo =TRUE,  cache=TRUE, fig.cap=FALSE)
+```
+
+## Predict Exercise
+
+Goal: Predict the manner if which 6 participants completing an exercise to lift a weight. The prediction has a code of A, B, C, D, or E.
+
+There are two datasets. One is for training the model. The second file has 20 records that are to be our test subjects for our prediction.
+
+## Preparing the data
+
+First, I investigated the data, which had 160 columns of data with 19622 records.
+
+After viewing the data, there were a lot of empty fields and NAs so I only imported the columns of data that would be relevant to the analysis. 
+
+With the training data, I partitioned to the data with 70% of the records to use for the model and 30% to use to test the model before I made the prediction of the final testing records.
+
+
+```{r get data}
+library(caret)
+
+rd = read.csv("~/pml-training.csv") #import raw data
+dim(rd)
+d <-rd[,c(8:11, 37:49, 60:68, 84:86, 102, 113:124, 140, 151:160)] #relevent variables 
+dim(d)
+set.seed(1500)
+inTrain <- createDataPartition(y=d$classe,
+                               p=0.7, list=FALSE)
+train <- d[inTrain,]
+test <- d[-inTrain,]
+dim(train)
+dim(test)
+```
+The model will be created using a Random Forrest with cross validation of 3 folds. The model will be created with the train data set. 
+
+```{r model, echo=TRUE}
+
+library(randomForest)
+mrf <- randomForest(classe~ .,data=train,
+             cv.fold=3, prox=TRUE)
+print(mrf)
+```
+
+Now we will run it on the test data from our partitioned data.
+
+
+```{r test model, echo=TRUE}
+pred <- predict(mrf,test)
+confusionMatrix(pred, test$classe)
+```
+
+The out of sample accuracy of the model is .9958 so the out of sample error would be expected to be approximately .42% (1-.9958 = .0042 *100). 
+
+The final task is to make the prediction for the 20 test subjects for the final test. 
+
+```{r model prediction, echo=TRUE}
+trd = read.csv("~/pml-testing.csv") #import raw data
+testing <-trd[,c(8:11, 37:49, 60:68, 84:86, 102, 113:124, 140, 151:160)]
+predict(mrf,testing)
+```
+## Quiz Results
+
+####Using the predictions above, scored 100% correct when automatically scored.
